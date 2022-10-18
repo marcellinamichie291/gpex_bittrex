@@ -1,4 +1,4 @@
-# Laravel-Bittrex-2020
+# GPEX_Bittrex
 
 Start trading on Bittrex right away using your favorite PHP framework.
 
@@ -105,7 +105,3 @@ Bittrex::setAuthSecret($secret);
 	echo print_r($data['result'][0],true);
 	dd($data);
 ```
-
-This package is provided as-is. Do with it what you want ! PR's will be looked into.
-I personally believe in freedom and equality, which is one of the reasons I'm in crypto.
-It's also the reason I'm sharing most of the reusable code I write.
