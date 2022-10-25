@@ -12,7 +12,7 @@ Including support for Laravel >=5.6
 
 ### Installation
 
-`composer require gpexinc/laravel-bittrex-2020`.
+`composer require gpexinc/laravel-bittrex`.
 
 Add the service provider to your `config/app.php`:
  
