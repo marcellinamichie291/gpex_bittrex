@@ -12,7 +12,7 @@ Including support for Laravel >=5.6
 
 ### Installation
 
-`composer require gpexinc/laravel-bittrex`.
+`composer require gpexinc/gpex_bittrex`.
 
 Add the service provider to your `config/app.php`:
  
