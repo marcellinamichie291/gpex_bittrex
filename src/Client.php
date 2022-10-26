@@ -84,7 +84,7 @@ class Client implements ClientContract
      * @return array|\stdClass
      */
     public function getCurrencies() {
-        return $this->public('getcurrencies');
+        return $this->public('currencies');
     }
 
     /**
@@ -94,10 +94,11 @@ class Client implements ClientContract
      * @return array|\stdClass
      */
     public function getTicker($market) {
-        return $this->public('getticker', [
-            'market' => $market
+        return $this->public('markets/' . $market . '/ticker', [
+            //'market' => $market
         ]);
     }
+    
 
     /**
      * Used to get the last 24 hour summary of all active exchanges
@@ -126,8 +127,8 @@ class Client implements ClientContract
      * @return array|\stdClass
      */
     public function getMarketSummary($market) {
-        return $this->public('getmarketsummary', [
-            'market' => $market,
+        return $this->public('markets/' . $market . '/summary', [
+            //'market' => $market,
         ]);
     }
 
@@ -139,10 +140,8 @@ class Client implements ClientContract
      * @param int $depth defaults to 20 - how deep of an order book to retrieve. Max is 50
      * @return array|\stdClass
      */
-    public function getOrderBook($market, $type, $depth=20) {
-        return $this->public('getorderbook', [
-            'market' => $market,
-            'type' => $type,
+    public function getOrderBook($market, $depth=25) {
+        return $this->public('markets/' . $market . '/orderbook?', [
             'depth' => $depth,
         ]);
     }
@@ -154,8 +153,8 @@ class Client implements ClientContract
      * @return array|\stdClass
      */
     public function getMarketHistory($market) {
-        return $this->public('getmarkethistory', [
-            'market' => $market,
+        return $this->public('markets/' . $market . '/trades', [
+            //'market' => $market,
         ]);
     }
 
@@ -248,19 +247,29 @@ class Client implements ClientContract
      * @param string|null $market a string literal for the market (ie. BTC-LTC)
      * @return array|\stdClass
      */
+   /* public function getOpenOrders($market=null) {
+        return $this->market('orders/open', [
+            'market' => $market,
+        ]);
+    }*/
+    
     public function getOpenOrders($market=null) {
-        return $this->market('getopenorders', [
+        return $this->market('orders/open', [
             'market' => $market,
         ]);
     }
-
+    
+    public function getClosedOrders() {
+        return $this->market('orders/closed');
+    }
+    
     /**
      * Used to retrieve all balances from your account
      *
      * @return array|\stdClass
      */
     public function getBalances() {
-        return $this->account('getbalances');
+        return $this->account('balances');
     }
 
     /**
@@ -270,8 +279,8 @@ class Client implements ClientContract
      * @return array|\stdClass
      */
     public function getBalance($currency) {
-        return $this->account('getbalance', [
-            'currency' => $currency,
+        return $this->account('balances/' . $currency . '??', [
+            //'currency' => $currency,
         ]);
     }
 
@@ -372,7 +381,7 @@ class Client implements ClientContract
         ];
 
         $publicUrl = $this->getPublicUrl($version);
-        $url = $publicUrl . $segment . '?' . http_build_query(array_filter($parameters));
+        $url = $publicUrl . $segment . '' . http_build_query(array_filter($parameters));
         $feed = file_get_contents($url, false, stream_context_create($options));
         if ($this->returnType == 'object') {
             return json_decode($feed);
@@ -415,7 +424,7 @@ class Client implements ClientContract
      * @param array $parameters
      * @return array|\stdClass
      */
-    protected function nonPublicRequest($baseUrl, $segment, $parameters=[]) {
+     /*protected function nonPublicRequest($baseUrl, $segment, $parameters=[]) {
         $parameters = array_merge(array_filter($parameters), [
             'apiKey' => $this->key,
             'nonce' => time()
@@ -439,6 +448,82 @@ class Client implements ClientContract
         } else {
             $res = json_decode($execResult, true);
         }
+        echo '<script>alert("' . $uri . '")</script>';
+
+        return $res;
+    } */
+    
+   /* protected function nonPublicRequest($baseUrl, $segment, $parameters=[]) {
+        
+        $apiKey = $this->key;
+        $apiSecret = $this->secret;
+        $nonce = time()*1000;
+		$url = "https://api.bittrex.com/v3/";
+		$method = "GET";
+		$content = "";
+		$contentHash = hash('sha512', $content);
+		$subAccountId = ""; 
+		$preSign = $nonce . $url . $segment . $method . $contentHash . $subAccountId;
+		$signature = hash_hmac('sha512', $preSign, $this->secret, true);
+		//$siggy = base64_encode($signature).PHP_EOL;
+		
+		$headers = array(
+		"Api-Key: ".$apiKey."",
+		"Api-Timestamp: ".$nonce."",
+		"Api-Content-Hash: ".$contentHash."",
+		"Api-Subaccount-Id: ".$subAccountId."",
+		"Api-Signature: ".$signature."",
+		"Accept: application/json",
+		"Content-Type: application/json",
+		"Content-Length: ".strlen($content)."",
+		);
+		
+		//dd($headers);
+		
+		$ch = curl_init($url);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+		curl_setopt($ch, CURLOPT_HEADER, FALSE);
+		$res = curl_exec($ch);
+		//curl_close($ch);
+        
+        echo '<script>alert("PRESIGN: ' . $preSign . '")</script>';
+
+        return $res;
+    }*/
+    
+    
+    protected function nonPublicRequest($baseUrl, $segment, $parameters=[]) {
+	    
+	    $apiKey = $this->key;
+	    $apiSecret = $this->secret;
+	    
+	    $nonce = time()*1000;
+		$url = "https://api.bittrex.com/v3/";
+		$method = "GET";
+		$content = "";
+		$subaccountId = "";
+		$contentHash = hash('sha512', $content);
+		$preSign = $nonce . $url . $segment . $method . $contentHash . $subaccountId;
+		$signature = hash_hmac('sha512', $preSign, $apiSecret);
+		
+		$headers = array(
+		"Accept: application/json",
+		"Content-Type: application/json",
+		"Api-Key: ".$apiKey."",
+		"Api-Signature: ".$signature."",
+		"Api-Timestamp: ".$nonce."",
+		"Api-Content-Hash: ".$contentHash.""
+		);
+		
+		$ch = curl_init($url . $segment);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+		curl_setopt($ch, CURLOPT_HEADER, FALSE);
+		$res = curl_exec($ch);
+		curl_close($ch);
+	    //echo '<script>alert("PRESIGN: ' . $preSign . '")</script>';
+
         return $res;
     }
 
