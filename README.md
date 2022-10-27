@@ -58,7 +58,7 @@ Bittrex::getCurrencies();
 Bittrex::getTicker($market);
 Bittrex::getMarketSummaries();
 Bittrex::getMarketSummary($market);
-Bittrex::getOrderBook($market, $type, $depth=20);
+Bittrex::getOrderBook($market, $type, $depth=25);
 Bittrex::getMarketHistory($market);
 
 // Public API 2.0 methods
@@ -66,8 +66,8 @@ Bittrex::getValidChartDataTickIntervals();
 Bittrex::getChartData($market, $tickInterval='hour');
 
 // market API methods
-Bittrex::buyLimit($market, $quantity, $rate);
-Bittrex::sellLimit($market, $quantity, $rate);
+Bittrex::buyLimit($params);
+Bittrex::sellLimit($params);
 Bittrex::cancelOrder($uuid);
 Bittrex::getOpenOrders($market=null);
 

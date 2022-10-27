@@ -202,12 +202,8 @@ class Client implements ClientContract
      *
      * @return array|\stdClass Returns you the order uuid
      */
-    public function buyLimit($market, $quantity, $rate) {
-        return $this->market('buylimit', [
-            'market' => $market,
-            'quantity' => $quantity,
-            'rate' => $rate,
-        ]);
+    public function buyLimit($params) {
+        return $this->trade('buylimit?' . $params);
     }
 
     /**
@@ -221,12 +217,8 @@ class Client implements ClientContract
      * @return array|\stdClass Returns you the order uuid
      *
      */
-    public function sellLimit($market, $quantity, $rate) {
-        return $this->market('selllimit', [
-            'market' => $market,
-            'quantity' => $quantity,
-            'rate' => $rate,
-        ]);
+    public function sellLimit($params) {
+        return $this->trade('selllimit?' . $params);
     }
 
     /**
@@ -236,7 +228,7 @@ class Client implements ClientContract
      * @return array|\stdClass
      */
     public function cancelOrder($uuid) {
-        return $this->market('cancel', [
+        return $this->trade('cancel', [
             'uuid' => $uuid,
         ]);
     }
@@ -279,7 +271,7 @@ class Client implements ClientContract
      * @return array|\stdClass
      */
     public function getBalance($currency) {
-        return $this->account('balances/' . $currency . '??', [
+        return $this->account('balances/' . $currency, [
             //'currency' => $currency,
         ]);
     }
@@ -413,6 +405,18 @@ class Client implements ClientContract
         $baseUrl = $this->accountUrl;
         return $this->nonPublicRequest($baseUrl, $segment, $parameters);
     }
+    
+     /**
+     * Execute an trade API request
+     *
+     * @param $segment
+     * @param array $parameters
+     * @return array|\stdClass
+     */
+    public function trade($segment, array $parameters=[]) {
+        $baseUrl = $this->accountUrl;
+        return $this->tradeRequest($baseUrl, $segment, $parameters);
+    }
 
 
     /**
@@ -504,7 +508,41 @@ class Client implements ClientContract
 		$content = "";
 		$subaccountId = "";
 		$contentHash = hash('sha512', $content);
-		$preSign = $nonce . $url . $segment . $method . $contentHash . $subaccountId;
+		$preSign = $nonce . $url . $segment . $method . $contentHash . $subaccountId . http_build_query($parameters);
+		$signature = hash_hmac('sha512', $preSign, $apiSecret);
+		
+		$headers = array(
+		"Accept: application/json",
+		"Content-Type: application/json",
+		"Api-Key: ".$apiKey."",
+		"Api-Signature: ".$signature."",
+		"Api-Timestamp: ".$nonce."",
+		"Api-Content-Hash: ".$contentHash.""
+		);
+		
+		$ch = curl_init($url . $segment);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+		curl_setopt($ch, CURLOPT_HEADER, FALSE);
+		$res = curl_exec($ch);
+		curl_close($ch);
+	    //echo '<script>alert("PRESIGN: ' . $preSign . '")</script>';
+
+        return $res;
+    }
+    
+    protected function tradeRequest($baseUrl, $segment, $parameters=[]) {
+	    
+	    $apiKey = $this->key;
+	    $apiSecret = $this->secret;
+	    
+	    $nonce = time()*1000;
+		$url = "https://api.bittrex.com/v3/";
+		$method = "POST";
+		$content = "";
+		$subaccountId = "";
+		$contentHash = hash('sha512', $content);
+		$preSign = $nonce . $url . $segment . $method . $contentHash . $subaccountId . http_build_query($parameters);
 		$signature = hash_hmac('sha512', $preSign, $apiSecret);
 		
 		$headers = array(

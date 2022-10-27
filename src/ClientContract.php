@@ -10,10 +10,10 @@ interface ClientContract
     public function getTicker($marker);
     public function getMarketSummaries();
     public function getMarketSummary($market);
-    public function getOrderBook($market, $depth=250);
+    public function getOrderBook($market, $depth=25);
     public function getMarketHistory($market);
-    public function buyLimit($market, $quantity, $rate);
-    public function sellLimit($market, $quantity, $rate);
+    public function buyLimit($params);
+    public function sellLimit($params);
     public function cancelOrder($uuid);
     public function getOpenOrders($market=null);
     public function getClosedOrders();
