@@ -25,7 +25,7 @@ class BittrexManager
      */
     public function version()
     {
-        return '0.1';
+        return '1.0.2';
     }
 
     /**
