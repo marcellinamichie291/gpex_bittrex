@@ -217,8 +217,8 @@ class Client implements ClientContract
      * @return array|\stdClass Returns you the order uuid
      *
      */
-    public function sellLimit($params) {
-        return $this->trade('selllimit?' . $params);
+    public function sellLimit($parameters) {
+        return $this->trade('orders', $parameters);
     }
 
     /**
@@ -413,7 +413,7 @@ class Client implements ClientContract
      * @param array $parameters
      * @return array|\stdClass
      */
-    public function trade($segment, array $parameters=[]) {
+    public function trade($segment, $parameters) {
         $baseUrl = $this->accountUrl;
         return $this->tradeRequest($baseUrl, $segment, $parameters);
     }
@@ -531,18 +531,27 @@ class Client implements ClientContract
         return $res;
     }
     
-    protected function tradeRequest($baseUrl, $segment, $parameters=[]) {
+    protected function tradeRequest($baseUrl, $segment, $parameters) {
 	    
 	    $apiKey = $this->key;
 	    $apiSecret = $this->secret;
 	    
-	    $nonce = time()*1000;
-		$url = "https://api.bittrex.com/v3/";
+	    $timestamp = time()*1000;
+		$url = "https://api.bittrex.com/v3/orders";
 		$method = "POST";
-		$content = "";
+				
+		$content = '{
+		  "marketSymbol": "GPX-USDT",
+		  "direction": "SELL",
+		  "type": "LIMIT",
+		  "quantity": "140",
+		  "limit": "0.40094",
+		  "timeInForce": "GOOD_TIL_CANCELED"
+		}';
+		
 		$subaccountId = "";
-		$contentHash = hash('sha512', $content);
-		$preSign = $nonce . $url . $segment . $method . $contentHash . $subaccountId . http_build_query($parameters);
+		$contentHash = hash('sha512', $parameters);
+		$preSign = $timestamp . $url . $method . $contentHash . $subaccountId;
 		$signature = hash_hmac('sha512', $preSign, $apiSecret);
 		
 		$headers = array(
@@ -550,19 +559,21 @@ class Client implements ClientContract
 		"Content-Type: application/json",
 		"Api-Key: ".$apiKey."",
 		"Api-Signature: ".$signature."",
-		"Api-Timestamp: ".$nonce."",
+		"Api-Timestamp: ".$timestamp."",
 		"Api-Content-Hash: ".$contentHash.""
 		);
 		
-		$ch = curl_init($url . $segment);
+		$ch = curl_init($url);
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
 		curl_setopt($ch, CURLOPT_HEADER, FALSE);
+		curl_setopt($ch, CURLOPT_POST, TRUE);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $parameters);
 		$res = curl_exec($ch);
 		curl_close($ch);
-	    //echo '<script>alert("PRESIGN: ' . $preSign . '")</script>';
+		
+		echo $res . $parameters;
 
-        return $res;
     }
 
     private function getPublicUrl($version)

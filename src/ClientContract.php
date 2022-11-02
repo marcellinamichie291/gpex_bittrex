@@ -13,7 +13,7 @@ interface ClientContract
     public function getOrderBook($market, $depth=25);
     public function getMarketHistory($market);
     public function buyLimit($params);
-    public function sellLimit($params);
+    public function sellLimit($parameters);
     public function cancelOrder($uuid);
     public function getOpenOrders($market=null);
     public function getClosedOrders();
