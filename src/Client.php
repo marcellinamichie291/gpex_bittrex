@@ -207,7 +207,7 @@ class Client implements ClientContract
     }
 
     /**
-     * Used to place an sell order in a specific market. Use selllimit to place limit orders.
+     * Used to place an sell order in a specific market. Use orderLimit to place limit orders.
      * Make sure you have the proper permissions set on your API keys for this call to work
      *
      * @param string $market a string literal for the market (ex: BTC-LTC)
@@ -217,7 +217,7 @@ class Client implements ClientContract
      * @return array|\stdClass Returns you the order uuid
      *
      */
-    public function sellLimit($parameters) {
+    public function orderLimit($parameters) {
         return $this->trade('orders', $parameters);
     }
 
@@ -228,7 +228,7 @@ class Client implements ClientContract
      * @return array|\stdClass
      */
     public function cancelOrder($uuid) {
-        return $this->trade('cancel', [
+        return $this->delete('orders/open', [
             'uuid' => $uuid,
         ]);
     }
@@ -393,6 +393,18 @@ class Client implements ClientContract
         $baseUrl = $this->marketUrl;
         return $this->nonPublicRequest($baseUrl, $segment, $parameters);
     }
+    
+    /**
+     * Execute a market API request
+     *
+     * @param $segment
+     * @param array $parameters
+     * @return array|\stdClass
+     */
+    public function delete($segment, array $parameters=[]) {
+        $baseUrl = $this->marketUrl;
+        return $this->deleteRequest($baseUrl, $segment, $parameters);
+    }
 
     /**
      * Execute an account API request
@@ -526,7 +538,6 @@ class Client implements ClientContract
 		curl_setopt($ch, CURLOPT_HEADER, FALSE);
 		$res = curl_exec($ch);
 		curl_close($ch);
-	    //echo '<script>alert("PRESIGN: ' . $preSign . '")</script>';
 
         return $res;
     }
@@ -539,15 +550,6 @@ class Client implements ClientContract
 	    $timestamp = time()*1000;
 		$url = "https://api.bittrex.com/v3/orders";
 		$method = "POST";
-				
-		$content = '{
-		  "marketSymbol": "GPX-USDT",
-		  "direction": "SELL",
-		  "type": "LIMIT",
-		  "quantity": "140",
-		  "limit": "0.40094",
-		  "timeInForce": "GOOD_TIL_CANCELED"
-		}';
 		
 		$subaccountId = "";
 		$contentHash = hash('sha512', $parameters);
@@ -572,10 +574,47 @@ class Client implements ClientContract
 		$res = curl_exec($ch);
 		curl_close($ch);
 		
-		echo $res . $parameters;
+		return $res;
 
     }
 
+	protected function deleteRequest($baseUrl, $segment, $parameters) {
+	    
+	    $apiKey = $this->key;
+	    $apiSecret = $this->secret;
+	    
+	    $nonce = time()*1000;
+		$url = "https://api.bittrex.com/v3/orders/open";
+		
+		//$method = "GET";
+		$method = "DELETE"; // INVALID_SIGNATURE
+		$content = "";
+		$subaccountId = "";
+		$contentHash = hash('sha512', $content);
+		$preSign = $nonce . $url . $method . $contentHash . $subaccountId;
+		$signature = hash_hmac('sha512', $preSign, $apiSecret);
+		
+		$headers = array(
+		"Accept: application/json",
+		"Content-Type: application/json",
+		"Api-Key: ".$apiKey."",
+		"Api-Signature: ".$signature."",
+		"Api-Timestamp: ".$nonce."",
+		"Api-Content-Hash: ".$contentHash.""
+		);
+		
+		$ch = curl_init($url);
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+		curl_setopt($ch, CURLOPT_HEADER, FALSE);
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+		
+		$res = curl_exec($ch);
+		curl_close($ch);
+		return $res;
+
+    }
+    
     private function getPublicUrl($version)
     {
         switch($version) {
